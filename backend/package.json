@@ -1,0 +1,23 @@
+{
+  "name": "loto-qr-backend",
+  "version": "1.0.0",
+  "description": "LOTO QR系统后端API",
+  "main": "index.js",
+  "scripts": {
+    "start": "node simple-server.js",
+    "dev": "node simple-server.js"
+  },
+  "dependencies": {
+    "express": "^5.2.1",
+    "mongoose": "^9.5.0",
+    "cors": "^2.8.6",
+    "jsonwebtoken": "^9.0.3",
+    "bcryptjs": "^2.4.3",
+    "qrcode": "^1.5.4",
+    "json2csv": "^6.0.0-alpha.2",
+    "dotenv": "^17.4.2"
+  },
+  "keywords": ["loto", "qr", "safety"],
+  "author": "",
+  "license": "ISC"
+}

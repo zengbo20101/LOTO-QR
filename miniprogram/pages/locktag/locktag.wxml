@@ -1,0 +1,46 @@
+<view class="container">
+  <view class="add-btn" bindtap="showAddModal">
+    <text class="icon">➕</text>
+    <text>新增锁牌</text>
+  </view>
+  
+  <view class="locktag-list">
+    <view class="card" wx:for="{{lockTags}}" wx:key="_id">
+      <view class="locktag-header">
+        <text class="locktag-no">{{item.tagNo}}</text>
+        <text class="locktag-name">{{item.tagName}}</text>
+        <text class="locktag-status {{item.status === '可用' ? 'status-available' : 'status-locked'}}">{{item.status}}</text>
+      </view>
+      
+      <view class="qr-container">
+        <image class="qr-image" src="{{item.qrBase64}}" mode="aspectFit" bindtap="previewQr" data-url="{{item.qrBase64}}" catchtap="true" />
+      </view>
+      
+      <view class="locktag-info">
+        <text class="info-text">创建者: {{item.createdBy.username || item.createdBy}}</text>
+      </view>
+      
+      <view class="locktag-actions">
+        <button class="action-btn btn-sm" size="mini" bindtap="saveQr" data-qr="{{item.qrBase64}}" catchtap="true">保存二维码</button>
+      </view>
+    </view>
+  </view>
+  
+  <view class="empty" wx:if="{{lockTags.length === 0 && !loading}}">
+    <text class="text-muted">暂无锁牌</text>
+  </view>
+</view>
+
+<!-- 添加锁牌弹窗 -->
+<view class="modal" wx:if="{{showAddModal}}" bindtap="hideAddModal">
+  <view class="modal-content" catchtap="true">
+    <view class="modal-title">新增锁牌</view>
+    <view class="modal-body">
+      <input class="input" placeholder="请输入锁牌名称" bindinput="onTagNameInput" value="{{tagName}}" />
+    </view>
+    <view class="modal-footer">
+      <button class="btn btn-default" bindtap="hideAddModal">取消</button>
+      <button class="btn btn-primary" bindtap="addLockTag" loading="{{addLoading}}">确定</button>
+    </view>
+  </view>
+</view>

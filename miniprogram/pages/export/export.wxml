@@ -1,0 +1,48 @@
+<view class="container">
+  <view class="section">
+    <view class="section-title">导出LOTO记录</view>
+    
+    <view class="form-item">
+      <view class="label">选择设备</view>
+      <picker mode="selector" range="{{ deviceNames }}" value="{{ deviceIndex }}" bindchange="onDeviceChange">
+        <view class="picker">{{ deviceNames[deviceIndex] || '全部设备' }}</view>
+      </picker>
+    </view>
+    
+    <view class="form-item">
+      <view class="label">选择锁牌</view>
+      <picker mode="selector" range="{{ lockTagNames }}" value="{{ lockTagIndex }}" bindchange="onLockTagChange">
+        <view class="picker">{{ lockTagNames[lockTagIndex] || '全部锁牌' }}</view>
+      </picker>
+    </view>
+    
+    <view class="form-item">
+      <view class="label">开始时间</view>
+      <picker mode="date" value="{{ startDate }}" bindchange="onStartDateChange">
+        <view class="picker">{{ startDate || '选择开始时间' }}</view>
+      </picker>
+    </view>
+    
+    <view class="form-item">
+      <view class="label">结束时间</view>
+      <picker mode="date" value="{{ endDate }}" bindchange="onEndDateChange">
+        <view class="picker">{{ endDate || '选择结束时间' }}</view>
+      </picker>
+    </view>
+  </view>
+  
+  <view class="btn-section">
+    <button class="btn-export btn-primary" bindtap="onExport" loading="{{ exporting }}">
+      导出CSV文件
+    </button>
+  </view>
+  
+  <view class="info-section">
+    <view class="info-title">导出说明</view>
+    <view class="info-text">
+      • 导出文件包含所有符合条件的LOTO记录
+      • 可以通过设备、锁牌和时间范围进行筛选
+      • 不设置筛选条件将导出全部记录
+    </view>
+  </view>
+</view>

@@ -1,0 +1,64 @@
+<view class="container">
+  <view class="header">
+    <view class="user-info">
+      <text class="welcome">欢迎, {{userInfo.username}}</text>
+      <text class="logout link" bindtap="onLogout">退出登录</text>
+    </view>
+  </view>
+  
+  <view class="stats-grid">
+    <view class="stat-item" bindtap="goToDevice">
+      <view class="stat-icon">📱</view>
+      <view class="stat-label">设备管理</view>
+      <view class="stat-value">{{deviceCount}}</view>
+    </view>
+    <view class="stat-item" bindtap="goToLockTag">
+      <view class="stat-icon">🔒</view>
+      <view class="stat-label">锁牌管理</view>
+      <view class="stat-value">{{lockTagCount}}</view>
+    </view>
+    <view class="stat-item" bindtap="goToLoto">
+      <view class="stat-icon">📋</view>
+      <view class="stat-label">LOTO记录</view>
+      <view class="stat-value">{{lotoCount}}</view>
+    </view>
+    <view class="stat-item" bindtap="goToExport">
+      <view class="stat-icon">📊</view>
+      <view class="stat-label">数据导出</view>
+    </view>
+  </view>
+  
+  <view class="quick-actions">
+    <view class="action-item" bindtap="scanCode">
+      <view class="action-icon">📷</view>
+      <view class="action-text">扫码</view>
+    </view>
+    <view class="action-item" bindtap="addDevice">
+      <view class="action-icon">➕</view>
+      <view class="action-text">新增设备</view>
+    </view>
+    <view class="action-item" bindtap="addLockTag">
+      <view class="action-icon">🔑</view>
+      <view class="action-text">新增锁牌</view>
+    </view>
+  </view>
+  
+  <view class="latest-section">
+    <view class="section-title">最近记录</view>
+    <view class="record-list" wx:if="{{latestRecords.length > 0}}">
+      <view class="card" wx:for="{{latestRecords}}" wx:key="_id">
+        <view class="record-header">
+          <text class="record-title">{{item.deviceId.deviceName || item.deviceId}}</text>
+          <text class="record-status {{item.status === '锁定' ? 'status-locked' : 'status-unlocked'}}">{{item.status}}</text>
+        </view>
+        <view class="record-info">
+          <text class="info-item">{{item.createdBy.username || item.createdBy}}</text>
+          <text class="info-item">{{item.createdTime}}</text>
+        </view>
+      </view>
+    </view>
+    <view class="empty" wx:else>
+      <text class="text-muted">暂无记录</text>
+    </view>
+  </view>
+</view>

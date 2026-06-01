@@ -1,0 +1,44 @@
+<view class="container">
+  <view class="form-section">
+    <view class="section-title">{{ isEdit ? '编辑LOTO记录' : '新增LOTO记录' }}</view>
+    
+    <view class="form-item">
+      <view class="label">选择设备 *</view>
+      <picker mode="selector" range="{{ deviceNames }}" value="{{ deviceIndex }}" bindchange="onDeviceChange">
+        <view class="picker">{{ deviceNames[deviceIndex] || '请选择设备' }}</view>
+      </picker>
+    </view>
+    
+    <view class="form-item">
+      <view class="label">选择锁牌</view>
+      <picker mode="selector" range="{{ lockTagNames }}" value="{{ lockTagIndex }}" bindchange="onLockTagChange">
+        <view class="picker">{{ lockTagNames[lockTagIndex] || '不使用锁牌' }}</view>
+      </picker>
+    </view>
+    
+    <view class="form-item">
+      <view class="label">LOTO信息 *</view>
+      <textarea 
+        class="textarea" 
+        placeholder="请输入LOTO详情，例如：维修电机，检查线路" 
+        value="{{ lotoInfo }}" 
+        bindinput="onLotoInfoChange"
+        maxlength="500"
+      ></textarea>
+    </view>
+    
+    <view class="form-item" wx:if="{{ isEdit }}">
+      <view class="label">状态</view>
+      <picker mode="selector" range="{{ statusOptions }}" value="{{ statusIndex }}" bindchange="onStatusChange">
+        <view class="picker">{{ statusOptions[statusIndex] }}</view>
+      </picker>
+    </view>
+  </view>
+  
+  <view class="btn-section">
+    <button class="btn-cancel" bindtap="onCancel">取消</button>
+    <button class="btn-submit btn-primary" bindtap="onSubmit" loading="{{ submitting }}">
+      {{ isEdit ? '保存修改' : '创建记录' }}
+    </button>
+  </view>
+</view>

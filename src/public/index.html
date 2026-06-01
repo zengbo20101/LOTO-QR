@@ -1,0 +1,1535 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>LOTO QR 设备管理系统</title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      background-color: #f5f5f5;
+    }
+    .container {
+      margin-top: 20px;
+    }
+    .device-card {
+      margin-bottom: 20px;
+      border-radius: 8px;
+      box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    }
+    .qr-code-container {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 20px;
+      background-color: #f8f9fa;
+      border-radius: 8px;
+    }
+    .qr-code-image {
+      max-width: 200px;
+      max-height: 200px;
+    }
+    .action-buttons {
+      margin-top: 15px;
+    }
+    .action-buttons button {
+      margin-right: 10px;
+      margin-bottom: 10px;
+    }
+    .tab-content {
+      margin-top: 20px;
+    }
+    .loto-record-card {
+      margin-bottom: 15px;
+      border-radius: 8px;
+      box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    }
+    .loto-record-card.active {
+      border-left: 4px solid #dc3545;
+    }
+    .loto-record-card.completed {
+      border-left: 4px solid #28a745;
+    }
+    .info-item {
+      margin-bottom: 8px;
+    }
+    .info-label {
+      font-weight: bold;
+      min-width: 120px;
+      display: inline-block;
+    }
+    @media (max-width: 768px) {
+      .info-label {
+        min-width: 100px;
+      }
+      .device-card {
+        margin-bottom: 20px;
+      }
+      .action-buttons button {
+        width: 100%;
+        margin-right: 0;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+      <h1 class="mt-4 mb-4">LOTO QR 设备管理系统</h1>
+      <div>
+        <button id="login-btn" class="btn btn-primary">登录</button>
+        <span id="user-info" style="display: none; margin-left: 10px;"></span>
+        <button id="logout-btn" class="btn btn-secondary" style="display: none; margin-left: 10px;">退出</button>
+      </div>
+    </div>
+    
+    <!-- 登录模态框 -->
+    <div class="modal fade" id="loginModal" tabindex="-1" aria-labelledby="loginModalLabel" aria-hidden="true">
+      <div class="modal-dialog">
+        <div class="modal-content">
+          <div class="modal-header">
+            <h5 class="modal-title" id="loginModalLabel">用户登录</h5>
+            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+          </div>
+          <div class="modal-body">
+            <form id="login-form">
+              <div class="mb-3">
+                <label for="login-identifier" class="form-label">用户名或电话</label>
+                <input type="text" class="form-control" id="login-identifier" name="identifier" required>
+              </div>
+            </form>
+          </div>
+          <div class="modal-footer">
+            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">取消</button>
+            <button type="button" class="btn btn-primary" id="submit-login">登录</button>
+            <button type="button" class="btn btn-link" id="register-link">注册新用户</button>
+          </div>
+        </div>
+      </div>
+    </div>
+    
+    <!-- 注册模态框 -->
+    <div class="modal fade" id="registerModal" tabindex="-1" aria-labelledby="registerModalLabel" aria-hidden="true">
+      <div class="modal-dialog">
+        <div class="modal-content">
+          <div class="modal-header">
+            <h5 class="modal-title" id="registerModalLabel">用户注册</h5>
+            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+          </div>
+          <div class="modal-body">
+            <form id="register-form">
+              <div class="mb-3">
+                <label for="register-username" class="form-label">用户名</label>
+                <input type="text" class="form-control" id="register-username" name="username" required>
+              </div>
+              <div class="mb-3">
+                <label for="register-phone" class="form-label">电话</label>
+                <input type="tel" class="form-control" id="register-phone" name="phone" required>
+              </div>
+            </form>
+          </div>
+          <div class="modal-footer">
+            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">取消</button>
+            <button type="button" class="btn btn-primary" id="submit-register">注册</button>
+          </div>
+        </div>
+      </div>
+    </div>
+    
+    <!-- 导航标签页 -->
+    <ul class="nav nav-tabs" id="main-tabs" role="tablist">
+      <li class="nav-item" role="presentation">
+        <button class="nav-link active" id="input-tab" data-bs-toggle="tab" data-bs-target="#input-panel" type="button" role="tab" aria-controls="input-panel" aria-selected="true">LOTO信息输入</button>
+      </li>
+      <li class="nav-item" role="presentation">
+        <button class="nav-link" id="devices-tab" data-bs-toggle="tab" data-bs-target="#devices-panel" type="button" role="tab" aria-controls="devices-panel" aria-selected="false">设备管理</button>
+      </li>
+      <li class="nav-item" role="presentation">
+        <button class="nav-link" id="lock-tags-tab" data-bs-toggle="tab" data-bs-target="#lock-tags-panel" type="button" role="tab" aria-controls="lock-tags-panel" aria-selected="false">上锁牌子管理</button>
+      </li>
+      <li class="nav-item" role="presentation">
+        <button class="nav-link" id="loto-history-tab" data-bs-toggle="tab" data-bs-target="#loto-history-panel" type="button" role="tab" aria-controls="loto-history-panel" aria-selected="false">LOTO历史记录</button>
+      </li>
+      <li class="nav-item" role="presentation">
+        <button class="nav-link" id="device-info-tab" data-bs-toggle="tab" data-bs-target="#device-info-panel" type="button" role="tab" aria-controls="device-info-panel" aria-selected="false">设备信息查看</button>
+      </li>
+    </ul>
+    
+    <!-- 历史记录模态框 -->
+    <div class="modal fade" id="historyModal" tabindex="-1" aria-labelledby="historyModalLabel" aria-hidden="true">
+      <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+          <div class="modal-header">
+            <h5 class="modal-title" id="historyModalLabel">LOTO记录历史</h5>
+            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+          </div>
+          <div class="modal-body">
+            <div id="history-content"></div>
+          </div>
+          <div class="modal-footer">
+            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">关闭</button>
+          </div>
+        </div>
+      </div>
+    </div>
+    
+    <!-- 标签页内容 -->
+    <div class="tab-content" id="main-tabs-content">
+    <!-- LOTO信息输入面板 -->
+    <div class="tab-pane fade show active" id="input-panel" role="tabpanel" aria-labelledby="input-tab">
+      <div class="card">
+        <div class="card-body">
+          <form id="loto-form">
+            <div class="row">
+              <div class="col-md-6">
+                <div class="mb-3">
+                  <label for="operator" class="form-label">挂牌上锁人员 <span class="text-danger">*</span></label>
+                  <input type="text" class="form-control" id="operator" name="operator" required readonly>
+                </div>
+                <div class="mb-3">
+                  <label for="phone" class="form-label">电话 <span class="text-danger">*</span></label>
+                  <input type="tel" class="form-control" id="phone" name="phone" required readonly>
+                </div>
+                <div class="mb-3">
+                  <label class="form-label">提交时间</label>
+                  <div class="form-control" id="submit-time">加载中...</div>
+                </div>
+              </div>
+              <div class="col-md-6">
+                <div class="mb-3">
+                  <label for="lockTagId" class="form-label">上锁牌子 <span class="text-danger">*</span></label>
+                  <select class="form-control" id="lockTagId" name="lockTagId" required>
+                    <option value="">请选择上锁牌子</option>
+                  </select>
+                </div>
+                <div class="mb-3">
+                  <label for="deviceId" class="form-label">设备 <span class="text-danger">*</span></label>
+                  <select class="form-control" id="deviceId" name="deviceId" required>
+                    <option value="">请选择设备</option>
+                  </select>
+                </div>
+                <div class="mb-3">
+                  <label for="deviceLocation" class="form-label">设备位号/位置 <span class="text-danger">*</span></label>
+                  <input type="text" class="form-control" id="deviceLocation" name="deviceLocation" required>
+                </div>
+                <div class="mb-3">
+                  <label for="workContent" class="form-label">作业内容 <span class="text-danger">*</span></label>
+                  <textarea class="form-control" id="workContent" name="workContent" rows="3" required></textarea>
+                </div>
+              </div>
+            </div>
+            <button type="submit" class="btn btn-primary">提交</button>
+          </form>
+        </div>
+      </div>
+    </div>
+      
+      <!-- 设备管理面板 -->
+      <div class="tab-pane fade" id="devices-panel" role="tabpanel" aria-labelledby="devices-tab">
+        <h2>设备管理</h2>
+        
+        <!-- 设备添加表单 -->
+        <div class="card mb-4">
+          <div class="card-body">
+            <h3>添加设备</h3>
+            <form id="device-form">
+              <div class="row">
+                <div class="col-md-4">
+                  <div class="mb-3">
+                    <label for="device-name" class="form-label">设备名称 <span class="text-danger">*</span></label>
+                    <input type="text" class="form-control" id="device-name" name="name" required>
+                  </div>
+                  <div class="mb-3">
+                    <label for="device-id" class="form-label">设备ID <span class="text-danger">*</span></label>
+                    <input type="text" class="form-control" id="device-id" name="deviceId" required>
+                  </div>
+                </div>
+                <div class="col-md-4">
+                  <div class="mb-3">
+                    <label for="device-location" class="form-label">位置 <span class="text-danger">*</span></label>
+                    <input type="text" class="form-control" id="device-location" name="location" required>
+                  </div>
+                  <div class="mb-3">
+                    <label for="device-status" class="form-label">状态</label>
+                    <select class="form-control" id="device-status" name="status">
+                      <option value="正常">正常</option>
+                      <option value="维修中">维修中</option>
+                      <option value="停用">停用</option>
+                    </select>
+                  </div>
+                </div>
+                <div class="col-md-4">
+                  <div class="mb-3">
+                    <label for="device-description" class="form-label">描述</label>
+                    <textarea class="form-control" id="device-description" name="description" rows="3"></textarea>
+                  </div>
+                  <button type="submit" class="btn btn-primary">添加设备</button>
+                </div>
+              </div>
+            </form>
+          </div>
+        </div>
+        
+        <!-- 设备列表 -->
+        <h3>设备列表</h3>
+        <div id="device-list" class="row"></div>
+      </div>
+    
+    <!-- 上锁牌子编辑模态框 -->
+    <div class="modal fade" id="editLockTagModal" tabindex="-1" aria-labelledby="editLockTagModalLabel" aria-hidden="true">
+      <div class="modal-dialog">
+        <div class="modal-content">
+          <div class="modal-header">
+            <h5 class="modal-title" id="editLockTagModalLabel">编辑上锁牌子</h5>
+            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+          </div>
+          <div class="modal-body">
+            <form id="edit-lock-tag-form">
+              <input type="hidden" id="edit-lock-tag-id" name="id">
+              <div class="mb-3">
+                <label for="edit-lock-tag-id-field" class="form-label">牌子编号 <span class="text-danger">*</span></label>
+                <input type="text" class="form-control" id="edit-lock-tag-id-field" name="tagId" required>
+              </div>
+              <div class="mb-3">
+                <label for="edit-lock-tag-name" class="form-label">牌子名称 <span class="text-danger">*</span></label>
+                <input type="text" class="form-control" id="edit-lock-tag-name" name="name" required>
+              </div>
+              <div class="mb-3">
+                <label for="edit-lock-tag-status" class="form-label">状态</label>
+                <select class="form-control" id="edit-lock-tag-status" name="status">
+                  <option value="可用">可用</option>
+                  <option value="使用中">使用中</option>
+                  <option value="维修中">维修中</option>
+                </select>
+              </div>
+              <div class="mb-3">
+                <label for="edit-lock-tag-description" class="form-label">描述</label>
+                <textarea class="form-control" id="edit-lock-tag-description" name="description" rows="3"></textarea>
+              </div>
+            </form>
+          </div>
+          <div class="modal-footer">
+            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">取消</button>
+            <button type="button" class="btn btn-primary" id="submit-edit-lock-tag">保存修改</button>
+          </div>
+        </div>
+      </div>
+    </div>
+    
+    <!-- 设备编辑模态框 -->
+      <div class="modal fade" id="editDeviceModal" tabindex="-1" aria-labelledby="editDeviceModalLabel" aria-hidden="true">
+        <div class="modal-dialog">
+          <div class="modal-content">
+            <div class="modal-header">
+              <h5 class="modal-title" id="editDeviceModalLabel">编辑设备</h5>
+              <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+              <form id="edit-device-form">
+                <input type="hidden" id="edit-device-id" name="id">
+                <div class="mb-3">
+                  <label for="edit-device-name" class="form-label">设备名称 <span class="text-danger">*</span></label>
+                  <input type="text" class="form-control" id="edit-device-name" name="name" required>
+                </div>
+                <div class="mb-3">
+                  <label for="edit-device-id-field" class="form-label">设备ID <span class="text-danger">*</span></label>
+                  <input type="text" class="form-control" id="edit-device-id-field" name="deviceId" required>
+                </div>
+                <div class="mb-3">
+                  <label for="edit-device-location" class="form-label">位置 <span class="text-danger">*</span></label>
+                  <input type="text" class="form-control" id="edit-device-location" name="location" required>
+                </div>
+                <div class="mb-3">
+                  <label for="edit-device-status" class="form-label">状态</label>
+                  <select class="form-control" id="edit-device-status" name="status">
+                    <option value="正常">正常</option>
+                    <option value="维修中">维修中</option>
+                    <option value="停用">停用</option>
+                  </select>
+                </div>
+                <div class="mb-3">
+                  <label for="edit-device-description" class="form-label">描述</label>
+                  <textarea class="form-control" id="edit-device-description" name="description" rows="3"></textarea>
+                </div>
+              </form>
+            </div>
+            <div class="modal-footer">
+              <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">取消</button>
+              <button type="button" class="btn btn-primary" id="submit-edit-device">保存修改</button>
+            </div>
+          </div>
+        </div>
+      </div>
+      
+      <!-- 上锁牌子管理面板 -->
+      <div class="tab-pane fade" id="lock-tags-panel" role="tabpanel" aria-labelledby="lock-tags-tab">
+        <h2>上锁牌子管理</h2>
+        
+        <!-- 添加上锁牌子表单 -->
+        <div class="card mb-4">
+          <div class="card-body">
+            <h3>添加上锁牌子</h3>
+            <form id="lock-tag-form">
+              <div class="row">
+                <div class="col-md-4">
+                  <div class="mb-3">
+                    <label for="lock-tag-id" class="form-label">牌子编号 <span class="text-danger">*</span></label>
+                    <input type="text" class="form-control" id="lock-tag-id" name="tagId" required>
+                  </div>
+                  <div class="mb-3">
+                    <label for="lock-tag-name" class="form-label">牌子名称 <span class="text-danger">*</span></label>
+                    <input type="text" class="form-control" id="lock-tag-name" name="name" required>
+                  </div>
+                </div>
+                <div class="col-md-4">
+                  <div class="mb-3">
+                    <label for="lock-tag-status" class="form-label">状态</label>
+                    <select class="form-control" id="lock-tag-status" name="status">
+                      <option value="可用">可用</option>
+                      <option value="使用中">使用中</option>
+                      <option value="维修中">维修中</option>
+                    </select>
+                  </div>
+                </div>
+                <div class="col-md-4">
+                  <div class="mb-3">
+                    <label for="lock-tag-description" class="form-label">描述</label>
+                    <textarea class="form-control" id="lock-tag-description" name="description" rows="3"></textarea>
+                  </div>
+                  <button type="submit" class="btn btn-primary">添加上锁牌子</button>
+                </div>
+              </div>
+            </form>
+          </div>
+        </div>
+        
+        <!-- 上锁牌子列表 -->
+        <h3>上锁牌子列表</h3>
+        <div id="lock-tags-list" class="row"></div>
+      </div>
+    
+    <!-- LOTO历史记录面板 -->
+      <div class="tab-pane fade" id="loto-history-panel" role="tabpanel" aria-labelledby="loto-history-tab">
+        <h2>LOTO历史记录</h2>
+        <div class="mb-3">
+          <select class="form-control" id="history-device-filter" onchange="filterLotoRecords()">
+            <option value="">所有设备</option>
+          </select>
+        </div>
+        <div id="loto-records-list"></div>
+      </div>
+      
+      <!-- 设备信息查看面板 -->
+      <div class="tab-pane fade" id="device-info-panel" role="tabpanel" aria-labelledby="device-info-tab">
+        <h2>设备信息查看</h2>
+        <div class="mb-3">
+          <select class="form-control" id="device-select" onchange="loadDeviceInfo()">
+            <option value="">请选择设备</option>
+          </select>
+        </div>
+        <div id="device-info" class="card" style="display: none;">
+          <div class="card-body">
+            <h3 id="device-name"></h3>
+            <div class="info-item"><span class="info-label">设备ID:</span> <span id="device-id"></span></div>
+            <div class="info-item"><span class="info-label">位置:</span> <span id="device-location"></span></div>
+            <div class="info-item"><span class="info-label">状态:</span> <span id="device-status"></span></div>
+            <div class="info-item"><span class="info-label">描述:</span> <span id="device-description"></span></div>
+            <div class="info-item"><span class="info-label">最后检查:</span> <span id="device-last-inspected"></span></div>
+            
+            <h4 class="mt-4">LOTO记录</h4>
+            <div id="device-loto-records"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+  <script>
+    // API 基础URL
+    const API_BASE_URL = 'http://localhost:3000/api';
+    
+    // 存储用户信息和令牌
+    let user = null;
+    let token = null;
+    // 存储设备列表和上锁牌子列表
+    let devicesList = [];
+    let lockTagsList = [];
+    // 当前扫描的tagId
+    let currentTagId = null;
+
+    // 页面加载时获取设备列表
+    document.addEventListener('DOMContentLoaded', async () => {
+      // 检查本地存储中的用户信息
+      checkUserSession();
+      
+      await fetchDevices();
+      await populateDeviceSelect();
+      await populateDeviceFilter();
+      await fetchLotoRecords();
+      await fetchLockTags();
+      await populateLockTagSelect();
+      // 设置当前时间
+      document.getElementById('submit-time').textContent = new Date().toLocaleString();
+      
+      // 处理URL参数（扫码跳转）
+      handleUrlParams();
+      
+      // 绑定登录按钮事件
+      document.getElementById('login-btn').addEventListener('click', () => {
+        const loginModal = new bootstrap.Modal(document.getElementById('loginModal'));
+        loginModal.show();
+      });
+      
+      // 绑定登录提交事件
+      document.getElementById('submit-login').addEventListener('click', login);
+      
+      // 绑定注册链接事件
+      document.getElementById('register-link').addEventListener('click', () => {
+        const loginModal = bootstrap.Modal.getInstance(document.getElementById('loginModal'));
+        loginModal.hide();
+        const registerModal = new bootstrap.Modal(document.getElementById('registerModal'));
+        registerModal.show();
+      });
+      
+      // 绑定注册提交事件
+      document.getElementById('submit-register').addEventListener('click', register);
+      
+      // 绑定退出按钮事件
+      document.getElementById('logout-btn').addEventListener('click', logout);
+    });
+    
+    // 处理URL参数
+    async function handleUrlParams() {
+      const urlParams = new URLSearchParams(window.location.search);
+      const deviceId = urlParams.get('deviceId');
+      const tagId = urlParams.get('tagId');
+      
+      if (deviceId) {
+        try {
+          // 获取设备信息
+          const response = await fetch(`${API_BASE_URL}/devices/${deviceId}`);
+          const device = await response.json();
+          
+          // 自动填充设备信息到表单
+          document.getElementById('deviceId').value = device._id;
+          document.getElementById('deviceLocation').value = device.location;
+          
+          // 切换到LOTO信息输入标签页
+          const inputTab = document.getElementById('input-tab');
+          inputTab.click();
+          
+          // 提示用户
+          alert(`已自动填充设备: ${device.name} (${device.location})`);
+        } catch (error) {
+          console.error('Error handling URL params:', error);
+          alert('加载设备信息失败');
+        }
+      } else if (tagId) {
+        try {
+          // 获取上锁牌子信息
+          const response = await fetch(`${API_BASE_URL}/lock-tags/${tagId}`);
+          const lockTag = await response.json();
+          
+          // 保存当前tagId
+          currentTagId = tagId;
+          
+          // 自动填充锁标签
+          await populateLockTagSelect();
+          document.getElementById('lockTagId').value = tagId;
+          
+          // 切换到LOTO信息输入标签页
+          const inputTab = document.getElementById('input-tab');
+          inputTab.click();
+          
+          // 询问用户是否要查看该锁标签的LOTO记录
+          const shouldViewRecords = confirm(`已扫描上锁牌子: ${lockTag.name} (${lockTag.tagId})\n\n是否查看该牌子的LOTO历史记录?`);
+          if (shouldViewRecords) {
+            await fetchLotoRecordsByLockTag(tagId);
+            const historyTab = document.getElementById('loto-history-tab');
+            historyTab.click();
+          } else {
+            alert('请选择要进行LOTO操作的设备');
+          }
+        } catch (error) {
+          console.error('Error handling URL params:', error);
+          alert('加载上锁牌子信息失败');
+        }
+      }
+    }
+    
+    // 检查用户会话
+    function checkUserSession() {
+      const savedUser = localStorage.getItem('user');
+      const savedToken = localStorage.getItem('token');
+      
+      if (savedUser && savedToken) {
+        user = JSON.parse(savedUser);
+        token = savedToken;
+        updateUIForLoggedInUser();
+        // 自动填充表单
+        populateFormWithUserInfo();
+      }
+    }
+    
+    // 更新登录用户的UI
+    function updateUIForLoggedInUser() {
+      document.getElementById('login-btn').style.display = 'none';
+      document.getElementById('user-info').style.display = 'inline';
+      document.getElementById('user-info').textContent = `欢迎, ${user.username}`;
+      document.getElementById('logout-btn').style.display = 'inline';
+    }
+    
+    // 登录功能
+    async function login() {
+      const identifier = document.getElementById('login-identifier').value;
+      
+      try {
+        const response = await fetch(`${API_BASE_URL}/auth/login`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({ identifier })
+        });
+        
+        if (response.ok) {
+          const result = await response.json();
+          user = result.user;
+          token = result.token;
+          
+          // 存储到本地存储
+          localStorage.setItem('user', JSON.stringify(user));
+          localStorage.setItem('token', token);
+          
+          // 更新UI
+          updateUIForLoggedInUser();
+          
+          // 自动填充表单
+          populateFormWithUserInfo();
+          
+          // 关闭模态框
+          const loginModal = bootstrap.Modal.getInstance(document.getElementById('loginModal'));
+          loginModal.hide();
+          
+          alert('登录成功');
+        } else {
+          const error = await response.json();
+          alert(`登录失败: ${error.message}`);
+        }
+      } catch (error) {
+        console.error('Error logging in:', error);
+        alert('登录失败，请重试');
+      }
+    }
+    
+    // 注册功能
+    async function register() {
+      const username = document.getElementById('register-username').value;
+      const phone = document.getElementById('register-phone').value;
+      
+      try {
+        const response = await fetch(`${API_BASE_URL}/auth/register`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({ username, phone })
+        });
+        
+        if (response.ok) {
+          const result = await response.json();
+          user = result.user;
+          token = result.token;
+          
+          // 存储到本地存储
+          localStorage.setItem('user', JSON.stringify(user));
+          localStorage.setItem('token', token);
+          
+          // 更新UI
+          updateUIForLoggedInUser();
+          
+          // 自动填充表单
+          populateFormWithUserInfo();
+          
+          // 关闭模态框
+          const registerModal = bootstrap.Modal.getInstance(document.getElementById('registerModal'));
+          registerModal.hide();
+          
+          alert('注册成功');
+        } else {
+          const error = await response.json();
+          alert(`注册失败: ${error.message}`);
+        }
+      } catch (error) {
+        console.error('Error registering:', error);
+        alert('注册失败，请重试');
+      }
+    }
+    
+    // 自动填充表单
+    function populateFormWithUserInfo() {
+      if (user) {
+        document.getElementById('operator').value = user.username;
+        document.getElementById('phone').value = user.phone;
+      }
+    }
+    
+    // 退出功能
+    function logout() {
+      user = null;
+      token = null;
+      
+      // 清除本地存储
+      localStorage.removeItem('user');
+      localStorage.removeItem('token');
+      
+      // 更新UI
+      document.getElementById('login-btn').style.display = 'inline';
+      document.getElementById('user-info').style.display = 'none';
+      document.getElementById('logout-btn').style.display = 'none';
+      
+      alert('已退出登录');
+    }
+
+    // 获取设备列表
+    async function fetchDevices() {
+      try {
+        const response = await fetch(`${API_BASE_URL}/devices`);
+        const devices = await response.json();
+        renderDevices(devices);
+        populateDeviceInfoSelect(devices);
+      } catch (error) {
+        console.error('Error fetching devices:', error);
+        alert('获取设备列表失败');
+      }
+    }
+    
+    // 获取上锁牌子列表
+    async function fetchLockTags() {
+      try {
+        const response = await fetch(`${API_BASE_URL}/lock-tags`);
+        const lockTags = await response.json();
+        lockTagsList = lockTags;
+        renderLockTags(lockTags);
+      } catch (error) {
+        console.error('Error fetching lock tags:', error);
+        alert('获取上锁牌子列表失败');
+      }
+    }
+
+    // 填充锁标签选择下拉框
+    async function populateLockTagSelect() {
+      try {
+        const lockTagSelect = document.getElementById('lockTagId');
+        // 清空现有选项（保留"请选择"选项）
+        lockTagSelect.innerHTML = '<option value="">请选择上锁牌子</option>';
+        
+        lockTagsList.forEach(tag => {
+          const option = document.createElement('option');
+          option.value = tag._id;
+          option.textContent = `${tag.name} (${tag.tagId})`;
+          lockTagSelect.appendChild(option);
+        });
+        
+        // 如果有当前tagId，选中它
+        if (currentTagId) {
+          lockTagSelect.value = currentTagId;
+        }
+      } catch (error) {
+        console.error('Error populating lock tag select:', error);
+      }
+    }
+    
+    // 渲染上锁牌子列表
+    function renderLockTags(lockTags) {
+      const lockTagsList = document.getElementById('lock-tags-list');
+      lockTagsList.innerHTML = '';
+      
+      lockTags.forEach(tag => {
+        const tagCard = document.createElement('div');
+        tagCard.className = 'col-md-4 col-sm-6';
+        tagCard.innerHTML = `
+          <div class="card device-card">
+            <div class="card-body">
+              <h5 class="card-title">${tag.name}</h5>
+              <p class="card-text"><strong>编号:</strong> ${tag.tagId}</p>
+              <p class="card-text"><strong>状态:</strong> ${tag.status}</p>
+              ${tag.description ? `<p class="card-text"><strong>描述:</strong> ${tag.description}</p>` : ''}
+              
+              <div class="qr-code-container">
+                ${tag.qrCodeUrl ? 
+                  `<img src="${tag.qrCodeUrl}" alt="QR Code" class="qr-code-image">` : 
+                  '<p>二维码未生成</p>'
+                }
+              </div>
+              
+              <div class="action-buttons">
+                <button class="btn btn-primary btn-sm" onclick="generateLockTagQRCode('${tag._id}')">生成二维码</button>
+                ${tag.qrCodeUrl ? 
+                  `<a href="${API_BASE_URL}/lock-tags/${tag._id}/download-qr" class="btn btn-success btn-sm" download>下载二维码</a>` : 
+                  ''
+                }
+                <button class="btn btn-info btn-sm" onclick="viewLockTagLotoRecords('${tag._id}')">查看记录</button>
+                <button class="btn btn-warning btn-sm" onclick="editLockTag('${tag._id}')">编辑</button>
+                <button class="btn btn-danger btn-sm" onclick="deleteLockTag('${tag._id}')">删除</button>
+              </div>
+            </div>
+          </div>
+        `;
+        lockTagsList.appendChild(tagCard);
+      });
+    }
+    
+    // 添加上锁牌子
+    document.getElementById('lock-tag-form').addEventListener('submit', async function(e) {
+      e.preventDefault();
+      
+      // 表单验证
+      if (!this.checkValidity()) {
+        this.reportValidity();
+        return;
+      }
+      
+      // 收集表单数据
+      const tagId = document.getElementById('lock-tag-id').value;
+      const name = document.getElementById('lock-tag-name').value;
+      const status = document.getElementById('lock-tag-status').value;
+      const description = document.getElementById('lock-tag-description').value;
+      
+      const lockTagData = {
+        tagId,
+        name,
+        status,
+        description
+      };
+      
+      try {
+        const response = await fetch(`${API_BASE_URL}/lock-tags`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify(lockTagData)
+        });
+        
+        if (response.ok) {
+          const result = await response.json();
+          console.log('上锁牌子添加成功:', result);
+          alert('上锁牌子添加成功');
+          this.reset(); // 重置表单
+          await fetchLockTags(); // 刷新上锁牌子列表
+        } else {
+          const error = await response.json();
+          console.error('添加失败:', error);
+          alert(`添加失败: ${error.message}`);
+        }
+      } catch (error) {
+        console.error('Error adding lock tag:', error);
+        alert('添加失败，请重试');
+      }
+    });
+    
+    // 编辑上锁牌子
+    async function editLockTag(tagId) {
+      try {
+        const response = await fetch(`${API_BASE_URL}/lock-tags/${tagId}`);
+        const lockTag = await response.json();
+        
+        // 填充编辑表单
+        document.getElementById('edit-lock-tag-id').value = lockTag._id;
+        document.getElementById('edit-lock-tag-id-field').value = lockTag.tagId;
+        document.getElementById('edit-lock-tag-name').value = lockTag.name;
+        document.getElementById('edit-lock-tag-status').value = lockTag.status;
+        document.getElementById('edit-lock-tag-description').value = lockTag.description || '';
+        
+        // 显示模态框
+        const editModal = new bootstrap.Modal(document.getElementById('editLockTagModal'));
+        editModal.show();
+      } catch (error) {
+        console.error('Error loading lock tag for edit:', error);
+        alert('加载上锁牌子信息失败');
+      }
+    }
+    
+    // 保存上锁牌子编辑
+    document.getElementById('submit-edit-lock-tag').addEventListener('click', async function() {
+      const tagId = document.getElementById('edit-lock-tag-id').value;
+      const name = document.getElementById('edit-lock-tag-name').value;
+      const tagIdField = document.getElementById('edit-lock-tag-id-field').value;
+      const status = document.getElementById('edit-lock-tag-status').value;
+      const description = document.getElementById('edit-lock-tag-description').value;
+      
+      const lockTagData = {
+        name,
+        tagId: tagIdField,
+        status,
+        description
+      };
+      
+      try {
+        const response = await fetch(`${API_BASE_URL}/lock-tags/${tagId}`, {
+          method: 'PUT',
+          headers: {
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify(lockTagData)
+        });
+        
+        if (response.ok) {
+          const result = await response.json();
+          console.log('上锁牌子更新成功:', result);
+          alert('上锁牌子更新成功');
+          
+          // 关闭模态框
+          const editModal = bootstrap.Modal.getInstance(document.getElementById('editLockTagModal'));
+          editModal.hide();
+          
+          await fetchLockTags(); // 刷新上锁牌子列表
+        } else {
+          const error = await response.json();
+          console.error('更新失败:', error);
+          alert(`更新失败: ${error.message}`);
+        }
+      } catch (error) {
+        console.error('Error updating lock tag:', error);
+        alert('更新失败，请重试');
+      }
+    });
+    
+    // 删除上锁牌子
+    async function deleteLockTag(tagId) {
+      if (!confirm('确定要删除此上锁牌子吗？')) {
+        return;
+      }
+      
+      try {
+        const response = await fetch(`${API_BASE_URL}/lock-tags/${tagId}`, {
+          method: 'DELETE'
+        });
+        
+        if (response.ok) {
+          const result = await response.json();
+          console.log('上锁牌子删除成功:', result);
+          alert('上锁牌子删除成功');
+          await fetchLockTags(); // 刷新上锁牌子列表
+        } else {
+          const error = await response.json();
+          console.error('删除失败:', error);
+          alert(`删除失败: ${error.message}`);
+        }
+      } catch (error) {
+        console.error('Error deleting lock tag:', error);
+        alert('删除失败，请重试');
+      }
+    }
+    
+    // 为上锁牌子生成二维码
+    async function generateLockTagQRCode(tagId) {
+      try {
+        const response = await fetch(`${API_BASE_URL}/lock-tags/${tagId}/generate-qr`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json'
+          }
+        });
+        
+        if (response.ok) {
+          alert('二维码生成成功');
+          await fetchLockTags(); // 刷新上锁牌子列表
+        } else {
+          const error = await response.json();
+          alert(`生成二维码失败: ${error.message}`);
+        }
+      } catch (error) {
+        console.error('Error generating QR code for lock tag:', error);
+        alert('生成二维码失败');
+      }
+    }
+
+    // 渲染设备列表
+    function renderDevices(devices) {
+      const deviceList = document.getElementById('device-list');
+      deviceList.innerHTML = '';
+
+      devices.forEach(device => {
+        const deviceCard = document.createElement('div');
+        deviceCard.className = 'col-md-4 col-sm-6';
+        deviceCard.innerHTML = `
+          <div class="card device-card">
+            <div class="card-body">
+              <h5 class="card-title">${device.name}</h5>
+              <p class="card-text"><strong>设备ID:</strong> ${device.deviceId}</p>
+              <p class="card-text"><strong>位置:</strong> ${device.location}</p>
+              <p class="card-text"><strong>状态:</strong> ${device.status}</p>
+              
+              <div class="action-buttons">
+                <button class="btn btn-info btn-sm" onclick="selectDeviceForInfo('${device._id}')">查看详情</button>
+                <button class="btn btn-warning btn-sm" onclick="editDevice('${device._id}')">编辑</button>
+                <button class="btn btn-danger btn-sm" onclick="deleteDevice('${device._id}')">删除</button>
+              </div>
+            </div>
+          </div>
+        `;
+        deviceList.appendChild(deviceCard);
+      });
+    }
+    
+    // 添加设备
+    document.getElementById('device-form').addEventListener('submit', async function(e) {
+      e.preventDefault();
+      
+      // 表单验证
+      if (!this.checkValidity()) {
+        this.reportValidity();
+        return;
+      }
+      
+      // 收集表单数据
+      const name = document.getElementById('device-name').value;
+      const deviceId = document.getElementById('device-id').value;
+      const location = document.getElementById('device-location').value;
+      const status = document.getElementById('device-status').value;
+      const description = document.getElementById('device-description').value;
+      
+      const deviceData = {
+        name,
+        deviceId,
+        location,
+        status,
+        description
+      };
+      
+      try {
+        const response = await fetch(`${API_BASE_URL}/devices`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify(deviceData)
+        });
+        
+        if (response.ok) {
+          const result = await response.json();
+          console.log('设备添加成功:', result);
+          alert('设备添加成功');
+          this.reset(); // 重置表单
+          await fetchDevices(); // 刷新设备列表
+        } else {
+          const error = await response.json();
+          console.error('添加失败:', error);
+          alert(`添加失败: ${error.message}`);
+        }
+      } catch (error) {
+        console.error('Error adding device:', error);
+        alert('添加失败，请重试');
+      }
+    });
+    
+    // 编辑设备
+    async function editDevice(deviceId) {
+      try {
+        const response = await fetch(`${API_BASE_URL}/devices/${deviceId}`);
+        const device = await response.json();
+        
+        // 填充编辑表单
+        document.getElementById('edit-device-id').value = device._id;
+        document.getElementById('edit-device-name').value = device.name;
+        document.getElementById('edit-device-id-field').value = device.deviceId;
+        document.getElementById('edit-device-location').value = device.location;
+        document.getElementById('edit-device-status').value = device.status;
+        document.getElementById('edit-device-description').value = device.description || '';
+        
+        // 显示模态框
+        const editModal = new bootstrap.Modal(document.getElementById('editDeviceModal'));
+        editModal.show();
+      } catch (error) {
+        console.error('Error loading device for edit:', error);
+        alert('加载设备信息失败');
+      }
+    }
+    
+    // 保存设备编辑
+    document.getElementById('submit-edit-device').addEventListener('click', async function() {
+      const deviceId = document.getElementById('edit-device-id').value;
+      const name = document.getElementById('edit-device-name').value;
+      const deviceIdField = document.getElementById('edit-device-id-field').value;
+      const location = document.getElementById('edit-device-location').value;
+      const status = document.getElementById('edit-device-status').value;
+      const description = document.getElementById('edit-device-description').value;
+      
+      const deviceData = {
+        name,
+        deviceId: deviceIdField,
+        location,
+        status,
+        description
+      };
+      
+      try {
+        const response = await fetch(`${API_BASE_URL}/devices/${deviceId}`, {
+          method: 'PUT',
+          headers: {
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify(deviceData)
+        });
+        
+        if (response.ok) {
+          const result = await response.json();
+          console.log('设备更新成功:', result);
+          alert('设备更新成功');
+          
+          // 关闭模态框
+          const editModal = bootstrap.Modal.getInstance(document.getElementById('editDeviceModal'));
+          editModal.hide();
+          
+          await fetchDevices(); // 刷新设备列表
+        } else {
+          const error = await response.json();
+          console.error('更新失败:', error);
+          alert(`更新失败: ${error.message}`);
+        }
+      } catch (error) {
+        console.error('Error updating device:', error);
+        alert('更新失败，请重试');
+      }
+    });
+    
+    // 删除设备
+    async function deleteDevice(deviceId) {
+      if (!confirm('确定要删除此设备吗？')) {
+        return;
+      }
+      
+      try {
+        const response = await fetch(`${API_BASE_URL}/devices/${deviceId}`, {
+          method: 'DELETE'
+        });
+        
+        if (response.ok) {
+          const result = await response.json();
+          console.log('设备删除成功:', result);
+          alert('设备删除成功');
+          await fetchDevices(); // 刷新设备列表
+        } else {
+          const error = await response.json();
+          console.error('删除失败:', error);
+          alert(`删除失败: ${error.message}`);
+        }
+      } catch (error) {
+        console.error('Error deleting device:', error);
+        alert('删除失败，请重试');
+      }
+    }
+
+    // 根据锁标签获取LOTO记录
+    async function fetchLotoRecordsByLockTag(lockTagId) {
+      try {
+        const response = await fetch(`${API_BASE_URL}/loto-records/lock-tag/${lockTagId}`);
+        const records = await response.json();
+        // 确保records是数组
+        const recordsArray = Array.isArray(records) ? records : [];
+        renderLotoRecords(recordsArray);
+        alert(`已加载 ${recordsArray.length} 条与该牌子相关的LOTO记录`);
+      } catch (error) {
+        console.error('Error fetching loto records by lock tag:', error);
+        alert('获取LOTO记录失败');
+      }
+    }
+
+    // 查看锁标签的LOTO记录
+    async function viewLockTagLotoRecords(lockTagId) {
+      await fetchLotoRecordsByLockTag(lockTagId);
+      const historyTab = document.getElementById('loto-history-tab');
+      historyTab.click();
+    }
+
+    // 填充设备选择下拉框
+    async function populateDeviceSelect() {
+      try {
+        const response = await fetch(`${API_BASE_URL}/devices`);
+        const devices = await response.json();
+        devicesList = devices; // 保存设备列表到全局变量
+        const deviceSelect = document.getElementById('deviceId');
+        
+        devices.forEach(device => {
+          const option = document.createElement('option');
+          option.value = device._id;
+          option.textContent = `${device.name} (${device.location})`;
+          deviceSelect.appendChild(option);
+        });
+        
+        // 添加设备选择 onchange 事件监听器
+        deviceSelect.addEventListener('change', handleDeviceSelectChange);
+      } catch (error) {
+        console.error('Error populating device select:', error);
+      }
+    }
+    
+    // 处理设备选择变化事件
+    function handleDeviceSelectChange() {
+      const selectedDeviceId = document.getElementById('deviceId').value;
+      const deviceLocationInput = document.getElementById('deviceLocation');
+      
+      if (!selectedDeviceId) {
+        deviceLocationInput.value = '';
+        return;
+      }
+      
+      // 在设备列表中找到对应的设备
+      const selectedDevice = devicesList.find(device => device._id === selectedDeviceId);
+      
+      if (selectedDevice) {
+        // 自动填充设备位置
+        deviceLocationInput.value = selectedDevice.location;
+      }
+    }
+
+    // 填充设备过滤下拉框
+    async function populateDeviceFilter() {
+      try {
+        const response = await fetch(`${API_BASE_URL}/devices`);
+        const devices = await response.json();
+        const filterSelect = document.getElementById('history-device-filter');
+        
+        devices.forEach(device => {
+          const option = document.createElement('option');
+          option.value = device._id;
+          option.textContent = `${device.name} (${device.location})`;
+          filterSelect.appendChild(option);
+        });
+      } catch (error) {
+        console.error('Error populating device filter:', error);
+      }
+    }
+
+    // 填充设备信息选择下拉框
+    function populateDeviceInfoSelect(devices) {
+      const select = document.getElementById('device-select');
+      
+      devices.forEach(device => {
+        const option = document.createElement('option');
+        option.value = device._id;
+        option.textContent = `${device.name} (${device.location})`;
+        select.appendChild(option);
+      });
+    }
+
+    // 选择设备查看详情
+    function selectDeviceForInfo(deviceId) {
+      document.getElementById('device-select').value = deviceId;
+      loadDeviceInfo();
+      
+      // 切换到设备信息标签页
+      const deviceInfoTab = document.getElementById('device-info-tab');
+      deviceInfoTab.click();
+    }
+
+    // 加载设备信息
+    async function loadDeviceInfo() {
+      const deviceId = document.getElementById('device-select').value;
+      if (!deviceId) {
+        document.getElementById('device-info').style.display = 'none';
+        return;
+      }
+      
+      try {
+        // 获取设备信息
+        const deviceResponse = await fetch(`${API_BASE_URL}/devices/${deviceId}`);
+        const device = await deviceResponse.json();
+        
+        // 填充设备信息
+        document.getElementById('device-name').textContent = device.name;
+        document.getElementById('device-id').textContent = device.deviceId;
+        document.getElementById('device-location').textContent = device.location;
+        document.getElementById('device-status').textContent = device.status;
+        document.getElementById('device-description').textContent = device.description || '无';
+        document.getElementById('device-last-inspected').textContent = device.lastInspected ? new Date(device.lastInspected).toLocaleString() : '无';
+        
+        // 获取设备的LOTO记录
+        const lotoResponse = await fetch(`${API_BASE_URL}/loto-records`);
+        const allRecords = await lotoResponse.json();
+        const deviceRecords = allRecords.filter(record => record.deviceId && record.deviceId._id === deviceId);
+        
+        // 渲染设备的LOTO记录
+        const recordsContainer = document.getElementById('device-loto-records');
+        recordsContainer.innerHTML = '';
+        
+        if (deviceRecords.length === 0) {
+          recordsContainer.innerHTML = '<p>暂无LOTO记录</p>';
+        } else {
+          deviceRecords.forEach(record => {
+            // 获取操作员信息（优先使用 record 中的独立字段）
+            let operatorName = record.operatorName;
+            let operatorPhone = record.operatorPhone;
+            
+            // 如果独立字段不存在，尝试从 userId 中获取
+            if (!operatorName && record.userId && record.userId.username) {
+              operatorName = record.userId.username;
+            }
+            if (!operatorPhone && record.userId && record.userId.phone) {
+              operatorPhone = record.userId.phone;
+            }
+            
+            const recordCard = document.createElement('div');
+            recordCard.className = `card loto-record-card ${record.status}`;
+            recordCard.innerHTML = `
+              <div class="card-body">
+                <div class="d-flex justify-content-between align-items-center">
+                  <h5 class="card-title">${record.status === 'active' ? '进行中' : '已完成'}</h5>
+                  <button class="btn btn-sm btn-info" onclick="viewLotoHistory('${record._id}')">查看历史</button>
+                </div>
+                <p class="card-text"><strong>开始时间:</strong> ${new Date(record.startTime).toLocaleString()}</p>
+                <p class="card-text"><strong>结束时间:</strong> ${record.endTime ? new Date(record.endTime).toLocaleString() : '未结束'}</p>
+                <p class="card-text"><strong>操作员:</strong> ${operatorName || '未知'}</p>
+                <p class="card-text"><strong>电话:</strong> ${operatorPhone || '未知'}</p>
+                <p class="card-text"><strong>作业原因:</strong> ${record.reason}</p>
+                ${record.notes ? `<p class="card-text"><strong>备注:</strong> ${record.notes}</p>` : ''}
+              </div>
+            `;
+            recordsContainer.appendChild(recordCard);
+          });
+        }
+        
+        document.getElementById('device-info').style.display = 'block';
+      } catch (error) {
+        console.error('Error loading device info:', error);
+        alert('获取设备信息失败');
+      }
+    }
+
+    // 获取LOTO记录
+    async function fetchLotoRecords() {
+      try {
+        const response = await fetch(`${API_BASE_URL}/loto-records`);
+        const records = await response.json();
+        // 确保records是数组
+        const recordsArray = Array.isArray(records) ? records : [];
+        renderLotoRecords(recordsArray);
+      } catch (error) {
+        console.error('Error fetching LOTO records:', error);
+        alert('获取LOTO记录失败');
+      }
+    }
+
+    // 渲染LOTO记录
+    function renderLotoRecords(records) {
+      const recordsList = document.getElementById('loto-records-list');
+      recordsList.innerHTML = '';
+      
+      if (records.length === 0) {
+        recordsList.innerHTML = '<p>暂无LOTO记录</p>';
+        return;
+      }
+      
+      records.forEach(record => {
+        const recordCard = document.createElement('div');
+        recordCard.className = `card loto-record-card ${record.status}`;
+        
+        // 获取操作员信息（优先使用 record 中的独立字段）
+        let operatorName = record.operatorName;
+        let operatorPhone = record.operatorPhone;
+        
+        // 如果独立字段不存在，尝试从 userId 中获取
+        if (!operatorName && record.userId && record.userId.username) {
+          operatorName = record.userId.username;
+        }
+        if (!operatorPhone && record.userId && record.userId.phone) {
+          operatorPhone = record.userId.phone;
+        }
+        
+        recordCard.innerHTML = `
+          <div class="card-body">
+            <div class="d-flex justify-content-between align-items-center">
+              <h5 class="card-title">${record.deviceId ? record.deviceId.name : '未知设备'}</h5>
+              <button class="btn btn-sm btn-info" onclick="viewLotoHistory('${record._id}')">查看历史</button>
+            </div>
+            <p class="card-text"><strong>上锁牌子:</strong> ${record.lockTagId ? record.lockTagId.name + ' (' + record.lockTagId.tagId + ')' : '未指定'}</p>
+            <p class="card-text"><strong>状态:</strong> ${record.status === 'active' ? '进行中' : '已完成'}</p>
+            <p class="card-text"><strong>开始时间:</strong> ${new Date(record.startTime).toLocaleString()}</p>
+            <p class="card-text"><strong>结束时间:</strong> ${record.endTime ? new Date(record.endTime).toLocaleString() : '未结束'}</p>
+            <p class="card-text"><strong>操作员:</strong> ${operatorName || '未知'}</p>
+            <p class="card-text"><strong>电话:</strong> ${operatorPhone || '未知'}</p>
+            <p class="card-text"><strong>作业原因:</strong> ${record.reason}</p>
+            ${record.notes ? `<p class="card-text"><strong>备注:</strong> ${record.notes}</p>` : ''}
+          </div>
+        `;
+        recordsList.appendChild(recordCard);
+      });
+    }
+
+    // 过滤LOTO记录
+    async function filterLotoRecords() {
+      const deviceId = document.getElementById('history-device-filter').value;
+      
+      try {
+        const response = await fetch(`${API_BASE_URL}/loto-records`);
+        const allRecords = await response.json();
+        
+        let filteredRecords = allRecords;
+        if (deviceId) {
+          filteredRecords = allRecords.filter(record => record.deviceId && record.deviceId._id === deviceId);
+        }
+        
+        renderLotoRecords(filteredRecords);
+      } catch (error) {
+        console.error('Error filtering LOTO records:', error);
+        alert('过滤LOTO记录失败');
+      }
+    }
+
+    // 表单提交处理
+    document.getElementById('loto-form').addEventListener('submit', async function(e) {
+      e.preventDefault();
+      
+      // 检查用户是否登录
+      if (!user || !token) {
+        alert('请先登录');
+        const loginModal = new bootstrap.Modal(document.getElementById('loginModal'));
+        loginModal.show();
+        return;
+      }
+      
+      // 表单验证
+      if (!this.checkValidity()) {
+        this.reportValidity();
+        return;
+      }
+      
+      // 收集表单数据
+      const operator = document.getElementById('operator').value;
+      const phone = document.getElementById('phone').value;
+      const lockTagId = document.getElementById('lockTagId').value;
+      const deviceId = document.getElementById('deviceId').value;
+      const deviceLocation = document.getElementById('deviceLocation').value;
+      const workContent = document.getElementById('workContent').value;
+      const submitTime = new Date();
+      
+      // 构建后端需要的数据格式
+      const lotoData = {
+        userId: user.id, // 使用当前登录用户的ID
+        deviceId: deviceId,
+        lockTagId: lockTagId,
+        operatorName: operator,
+        operatorPhone: phone,
+        startTime: submitTime,
+        reason: `设备位号: ${deviceLocation}, 作业内容: ${workContent}`
+      };
+      
+      try {
+        const response = await fetch(`${API_BASE_URL}/loto-records`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${token}` // 添加身份验证令牌
+          },
+          body: JSON.stringify(lotoData)
+        });
+        
+        if (response.ok) {
+          const result = await response.json();
+          console.log('提交成功:', result);
+          alert('LOTO信息提交成功');
+          
+          // 重置表单，但保留当前tagId
+          this.reset();
+          // 重新填充用户信息
+          populateFormWithUserInfo();
+          // 重新填充tagId和相关选项
+          await populateLockTagSelect();
+          await populateDeviceSelect();
+          if (currentTagId) {
+            document.getElementById('lockTagId').value = currentTagId;
+          }
+          
+          await fetchLotoRecords(); // 刷新LOTO记录
+        } else {
+          const error = await response.json();
+          console.error('提交失败:', error);
+          alert(`提交失败: ${error.message}`);
+        }
+      } catch (error) {
+        console.error('Error submitting LOTO form:', error);
+        alert('提交失败，请重试');
+      }
+    });
+    
+    // 查看LOTO记录历史
+    async function viewLotoHistory(recordId) {
+      try {
+        const response = await fetch(`${API_BASE_URL}/loto-records/${recordId}/history`);
+        const historyRecords = await response.json();
+        
+        const historyContent = document.getElementById('history-content');
+        
+        if (historyRecords.length === 0) {
+          historyContent.innerHTML = '<p>暂无历史记录</p>';
+        } else {
+          let html = '<div class="list-group">';
+          historyRecords.forEach(record => {
+            // 确定操作类型的中文描述
+            let operationText = '';
+            switch (record.operation) {
+              case 'create':
+                operationText = '创建';
+                break;
+              case 'update':
+                operationText = '更新';
+                break;
+              case 'delete':
+                operationText = '删除';
+                break;
+              default:
+                operationText = record.operation;
+            }
+            
+            // 格式化时间
+            const timestamp = new Date(record.timestamp).toLocaleString();
+            
+            // 构建历史记录卡片
+            html += `
+              <div class="list-group-item mb-3">
+                <div class="d-flex justify-content-between">
+                  <h6 class="mb-1">${operationText}操作</h6>
+                  <small class="text-muted">${timestamp}</small>
+                </div>
+                <p class="mb-1"><strong>操作人IP:</strong> ${record.ipAddress || '未知'}</p>
+                ${record.changedFields.length > 0 ? `<p class="mb-1"><strong>变更字段:</strong> ${record.changedFields.join(', ')}</p>` : ''}
+                ${record.operation === 'update' ? `
+                  <div class="mt-2">
+                    <p class="mb-1"><strong>变更前:</strong></p>
+                    <pre class="bg-light p-2 rounded"><code>${JSON.stringify(record.previousData, null, 2)}</code></pre>
+                    <p class="mt-2 mb-1"><strong>变更后:</strong></p>
+                    <pre class="bg-light p-2 rounded"><code>${JSON.stringify(record.newData, null, 2)}</code></pre>
+                  </div>
+                ` : record.operation === 'create' ? `
+                  <div class="mt-2">
+                    <p class="mb-1"><strong>创建数据:</strong></p>
+                    <pre class="bg-light p-2 rounded"><code>${JSON.stringify(record.newData, null, 2)}</code></pre>
+                  </div>
+                ` : `
+                  <div class="mt-2">
+                    <p class="mb-1"><strong>删除数据:</strong></p>
+                    <pre class="bg-light p-2 rounded"><code>${JSON.stringify(record.previousData, null, 2)}</code></pre>
+                  </div>
+                `}
+              </div>
+            `;
+          });
+          html += '</div>';
+          historyContent.innerHTML = html;
+        }
+        
+        // 显示模态框
+        const historyModal = new bootstrap.Modal(document.getElementById('historyModal'));
+        historyModal.show();
+      } catch (error) {
+        console.error('Error fetching history:', error);
+        alert('获取历史记录失败');
+      }
+    }
+  </script>
+</body>
+</html>

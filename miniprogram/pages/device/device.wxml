@@ -1,0 +1,49 @@
+<view class="container">
+  <view class="add-btn" bindtap="showAddModal">
+    <text class="icon">➕</text>
+    <text>新增设备</text>
+  </view>
+  
+  <view class="device-list">
+    <view class="card" wx:for="{{devices}}" wx:key="_id" bindtap="viewDevice" data-id="{{item._id}}">
+      <view class="device-header">
+        <text class="device-no">{{item.deviceNo}}</text>
+        <text class="device-name">{{item.deviceName}}</text>
+      </view>
+      
+      <view class="qr-container">
+        <image class="qr-image" src="{{item.qrBase64}}" mode="aspectFit" bindtap="previewQr" data-url="{{item.qrBase64}}" catchtap="true" />
+      </view>
+      
+      <view class="device-info">
+        <text class="info-text">创建者: {{item.createdBy.username || item.createdBy}}</text>
+      </view>
+      
+      <view class="device-actions">
+        <button class="action-btn btn-sm" size="mini" bindtap="saveQr" data-qr="{{item.qrBase64}}" catchtap="true">保存二维码</button>
+      </view>
+    </view>
+  </view>
+  
+  <view class="empty" wx:if="{{devices.length === 0 && !loading}}">
+    <text class="text-muted">暂无设备</text>
+  </view>
+  
+  <view class="loading" wx:if="{{loading}}">
+    <text>加载中...</text>
+  </view>
+</view>
+
+<!-- 添加设备弹窗 -->
+<view class="modal" wx:if="{{showAddModal}}" bindtap="hideAddModal">
+  <view class="modal-content" catchtap="true">
+    <view class="modal-title">新增设备</view>
+    <view class="modal-body">
+      <input class="input" placeholder="请输入设备名称" bindinput="onDeviceNameInput" value="{{deviceName}}" />
+    </view>
+    <view class="modal-footer">
+      <button class="btn btn-default" bindtap="hideAddModal">取消</button>
+      <button class="btn btn-primary" bindtap="addDevice" loading="{{addLoading}}">确定</button>
+    </view>
+  </view>
+</view>

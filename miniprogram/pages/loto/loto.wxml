@@ -1,0 +1,49 @@
+<view class="container">
+  <view class="add-btn" bindtap="goToAdd">
+    <text class="icon">➕</text>
+    <text>新增LOTO记录</text>
+  </view>
+  
+  <view class="filter-section">
+    <picker mode="selector" range="{{filterOptions}}" value="{{filterIndex}}" bindchange="onFilterChange">
+      <view class="filter-picker">{{filterOptions[filterIndex]}}</view>
+    </picker>
+  </view>
+  
+  <view class="loto-list">
+    <view class="card" wx:for="{{lotoRecords}}" wx:key="_id">
+      <view class="loto-header">
+        <view class="loto-title">
+          <text class="device-name">{{item.deviceId.deviceName || item.deviceId}}</text>
+          <text class="loto-status {{item.status === '锁定' ? 'status-locked' : 'status-unlocked'}}">{{item.status}}</text>
+        </view>
+        <text class="loto-time">{{item.createdTime}}</text>
+      </view>
+      
+      <view class="loto-info">
+        <view class="info-row">
+          <text class="label">锁牌:</text>
+          <text class="value">{{item.lockTagId ? (item.lockTagId.tagName || item.lockTagId) : '-'}}</text>
+        </view>
+        <view class="info-row">
+          <text class="label">创建者:</text>
+          <text class="value">{{item.createdBy.username || item.createdBy}}</text>
+        </view>
+        <view class="info-row">
+          <text class="label">内容:</text>
+          <text class="value">{{item.lotoInfo}}</text>
+        </view>
+      </view>
+      
+      <view class="loto-actions" wx:if="{{item.createdBy._id === userInfo._id || item.createdBy === userInfo._id || item.createdBy === userInfo.username}}">
+        <button class="action-btn btn-sm" size="mini" wx:if="{{item.status === '锁定'}}" bindtap="cancelLoto" data-id="{{item._id}}">解除锁定</button>
+        <button class="action-btn btn-sm btn-warning" size="mini" bindtap="editLoto" data-id="{{item._id}}">编辑</button>
+        <button class="action-btn btn-sm btn-danger" size="mini" bindtap="deleteLoto" data-id="{{item._id}}">删除</button>
+      </view>
+    </view>
+  </view>
+  
+  <view class="empty" wx:if="{{lotoRecords.length === 0 && !loading}}">
+    <text class="text-muted">暂无LOTO记录</text>
+  </view>
+</view>
