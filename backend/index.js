@@ -457,7 +457,7 @@ app.get('/api/export/loto', authMiddleware, async (req, res) => {
 const PORT = process.env.PORT || 3000;
 
 connectDB().then(() => {
-  app.listen(PORT, () => {
+  app.listen(PORT, '0.0.0.0', () => {
     console.log(`\n🚀 LOTO QR System API 运行中!`);
     console.log(`📍 访问地址: http://localhost:${PORT}`);
     console.log(`📊 模式: ${usingMockData ? '模拟数据模式' : '真实数据库模式'}`);
